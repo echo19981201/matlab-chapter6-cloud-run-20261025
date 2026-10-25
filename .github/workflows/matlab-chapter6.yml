@@ -26,7 +26,9 @@ jobs:
           persist-credentials: false
 
       - name: Verify original source bytes
-        run: sha256sum --check SOURCE_SHA256.txt
+        run: |
+          sha256sum --check SOURCE_SHA256.txt
+          sha256sum --check NEW_SOURCE_SHA256.txt
 
       - name: Install virtual display and Chinese fonts from Ubuntu
         timeout-minutes: 5
@@ -72,6 +74,13 @@ jobs:
           startup-options: -softwareopengl
           generate-summary: false
 
+      - name: Run audited new textbook and slide examples
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5
+        with:
+          command: ci_run_newbatch
+          startup-options: -softwareopengl
+          generate-summary: false
+
       - name: Verify captured files and report counts
         if: ${{ always() }}
         run: python3 ci/verify_outputs.py
@@ -86,6 +95,7 @@ jobs:
             ci-diagnostics/
             matlab-startup.log
             lab-output/
+            new-output/
           if-no-files-found: error
           retention-days: 14
           compression-level: 6
