@@ -1,0 +1,9 @@
+x=0:0.4*pi:2*pi;
+y1=sin(x);y2=cos(x);
+y3=sin(x-0.1*pi);y4=cos(x+0.1*pi);
+figure;
+plot(y1)
+plot(x,y3)
+plot(x,[y1;y2;y3;y4])
+plot(x,y1,x,y2,x,y3,x,y4)
+legend('图1','图2','图3','图4')
