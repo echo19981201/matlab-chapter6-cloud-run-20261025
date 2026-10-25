@@ -27,7 +27,11 @@ if len(manifests) == 1:
     if not data.get("complete") or data.get("succeeded") != 28 or data.get("failed") != 0:
         issues.append("MATLAB did not report 28/28 successes")
     screenshots = sorted((run_dir / "images").glob("*.png"))
-    if {p.stem for p in screenshots} != set(expected):
+    expected_screenshots = []
+    for name in expected:
+        count = 4 if name == "task6_1_04" else 2 if name in ("task6_1_05", "task6_1_06") else 1
+        expected_screenshots.extend([name] if count == 1 else [f"{name}_{i:02d}" for i in range(1, count + 1)])
+    if {p.stem for p in screenshots} != set(expected_screenshots):
         issues.append("Missing or unexpected screenshot names")
     frames = sorted((run_dir / "animation_frames").glob("*.png"))
     if len(frames) != 36:
@@ -55,8 +59,8 @@ if len(manifests) == 1:
         with zipfile.ZipFile(zip_path) as archive:
             if archive.testzip():
                 issues.append("ZIP CRC check failed")
-            if len([n for n in archive.namelist() if n.startswith("images/") and n.endswith(".png")]) != 28:
-                issues.append("ZIP does not contain 28 main screenshots")
+            if len([n for n in archive.namelist() if n.startswith("images/") and n.endswith(".png")]) != len(expected_screenshots):
+                issues.append("ZIP screenshot inventory is incomplete")
     summary.update({"matlab_version": data.get("version"), "main_screenshots": len(screenshots),
                     "animation_frames": len(frames), "images": image_info})
 
@@ -64,7 +68,7 @@ summary["validation"] = "passed" if not issues else "failed"
 (diagnostics / "validation.json").write_text(json.dumps(summary, indent=2) + "\n")
 message = f"Output validation: {summary['validation']}\n"
 if "main_screenshots" in summary:
-    message += f"Main screenshots: {summary['main_screenshots']}/28; animation frames: {summary['animation_frames']}/36.\n"
+    message += f"Main screenshots: {summary['main_screenshots']}/33; animation frames: {summary['animation_frames']}/36.\n"
 message += "\n".join(f"- {issue}" for issue in issues) + "\n"
 print(message)
 if os.environ.get("GITHUB_STEP_SUMMARY"):

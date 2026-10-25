@@ -1,6 +1,6 @@
 [X0,Y0,Z0]=sphere(30);
 X=2*X0;Y=2*Y0;Z=2*Z0;
-figure;
+fig=figure;
 NN=surf(X0,Y0,Z0);
 shading interp
 hold on
@@ -9,13 +9,15 @@ hold off
 hidden off
 axis equal;axis off
 n=12;
+smallFrames=repmat(struct('cdata',[],'colormap',[]),1,n);
+largeFrames=repmat(struct('cdata',[],'colormap',[]),1,n);
 for i=1:n
     rotate(NN,[0 0.5 1],25)
     drawnow
-    smallFrames(i)=getframe(gcf);
+    smallFrames(i)=getframe(fig);
     rotate(WWW,[0.5 0.5 0],25)
     drawnow
-    largeFrames(i)=getframe(gcf);
+    largeFrames(i)=getframe(fig);
 end
-movie(smallFrames,5,10)
-movie(largeFrames,5,10)
+movie(fig,smallFrames,5,10)
+movie(fig,largeFrames,5,10)

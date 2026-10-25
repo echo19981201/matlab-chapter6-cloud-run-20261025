@@ -37,7 +37,7 @@ fprintf('Actual MATLAB Chapter 6 run\nVersion: %s\nPlatform: %s\n', version, com
 fprintf('Start: %s\nSource scripts are unchanged.\n', datestr(now, 31));
 fprintf('Capture: getframe(figure) + imwrite; interior only, no OS chrome.\n');
 fprintf('task6_1_01 intentionally creates a blank figure.\n');
-fprintf('task6_1_04 retains only the last plot, as the source specifies.\n');
+fprintf('Multi-stage examples retain all textbook stages.\n');
 
 manifest = struct;
 manifest.engine = 'MATLAB';
@@ -45,10 +45,10 @@ manifest.version = version;
 manifest.platform = computer;
 manifest.started_at = datestr(now, 31);
 manifest.expected_examples = numel(names);
-manifest.original_sources_unchanged = true;
+manifest.source_scripts_executed_without_runtime_edits = true;
 manifest.capture_method = 'getframe(figure) + imwrite';
 manifest.notes = {'task6_1_01 is intentionally blank'; ...
-    'task6_1_04 final axes replace preceding plot commands'; ...
+    'task6_1_04/05/06 preserve all textbook plot stages'; ...
     'Animation frames are original getframe outputs retained by scripts 25 and 26'};
 record = struct('example', '', 'status', 'not_run', 'figure_count', 0, ...
     'screenshots', {{}}, 'figure_files', {{}}, 'animation_frames', {{}}, ...
@@ -66,17 +66,22 @@ for k = 1:numel(names)
         drawnow;
         madeFigures = newFigures(beforeFigures);
         item.figure_count = numel(madeFigures);
-        assert(numel(madeFigures) == 1, 'Chapter6:FigureCount', ...
-            'Expected exactly one new figure; found %d.', numel(madeFigures));
+        expectedCount = 1;
+        if strcmp(names{k}, 'task6_1_04'), expectedCount = 4; end
+        if any(strcmp(names{k}, {'task6_1_05','task6_1_06'})), expectedCount = 2; end
+        assert(numel(madeFigures) == expectedCount, 'Chapter6:FigureCount', ...
+            'Expected %d new figures; found %d.', expectedCount, numel(madeFigures));
         for f = 1:numel(madeFigures)
             fig = madeFigures(f);
             drawnow;
             captured = getframe(fig);
             assert(~isempty(captured.cdata), 'Chapter6:EmptyCapture', 'No captured pixels.');
-            pngRelative = fullfile('images', [names{k} '.png']);
+            outputName = names{k};
+            if numel(madeFigures) > 1, outputName = sprintf('%s_%02d', names{k}, f); end
+            pngRelative = fullfile('images', [outputName '.png']);
             imwrite(captured.cdata, fullfile(runDir, pngRelative));
             item.screenshots{end+1} = pngRelative;
-            figRelative = fullfile('figures', [names{k} '.fig']);
+            figRelative = fullfile('figures', [outputName '.fig']);
             try
                 savefig(fig, fullfile(runDir, figRelative));
                 item.figure_files{end+1} = figRelative;
@@ -142,6 +147,16 @@ end
 function frameSets = runSourceIsolated(runnerSourcePath)
 % This function workspace isolates source variables from runner state.
 run(runnerSourcePath);
+[~, auditName] = fileparts(runnerSourcePath);
+if strcmp(auditName, 'task6_1_22')
+    assert(numel(z) == 10 && max(abs(z - (x.^2 + 2*y))) < 1e-12, 'Incorrect stem heights.');
+    fprintf('AUDIT PASS: z=x.^2+2*y, 10 stems.\n');
+end
+if strcmp(auditName, 'task6_1_25')
+    assert(isequal(size(X), [41 41]) && abs(min(X(:)) + 3*pi) < 1e-12 && abs(max(X(:)) - 3*pi) < 1e-12, 'Incorrect radial surface range.');
+    assert(abs(Z(21,21)-1) < 1e-12, 'Incorrect center of radial surface.');
+    fprintf('AUDIT PASS: 41x41 mesh over [-3*pi,3*pi], center Z=1.\n');
+end
 frameSets = struct('name', {}, 'frames', {});
 if exist('frames', 'var')
     frameSets(end+1) = struct('name', 'frames', 'frames', frames);
@@ -157,6 +172,10 @@ end
 function figs = newFigures(before)
 allFigures = findall(groot, 'Type', 'figure');
 figs = allFigures(~ismember(allFigures, before));
+if ~isempty(figs)
+    [~, order] = sort(arrayfun(@(f) f.Number, figs));
+    figs = figs(order);
+end
 end
 
 function restoreFigureDefaults(visible, style, position)
