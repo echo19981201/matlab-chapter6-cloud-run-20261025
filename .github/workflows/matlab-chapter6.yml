@@ -29,10 +29,11 @@ jobs:
         run: sha256sum --check SOURCE_SHA256.txt
 
       - name: Install virtual display and Chinese fonts from Ubuntu
+        timeout-minutes: 5
         run: |
           mkdir -p ci-diagnostics output
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xvfb x11-utils fontconfig fonts-noto-cjk libgl1-mesa-dri libgl1-mesa-glx
+          sudo apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=2 update
+          sudo apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=2 install -y --no-install-recommends xvfb x11-utils fontconfig fonts-noto-cjk libgl1-mesa-dri libgl1-mesa-glx
           fc-cache -f
           fc-match 'Noto Sans CJK SC' | tee ci-diagnostics/cjk-font.txt
           fc-list :lang=zh family | sort -u > ci-diagnostics/chinese-fonts.txt
@@ -64,6 +65,13 @@ jobs:
           startup-options: -softwareopengl -logfile matlab-startup.log
           generate-summary: false
 
+      - name: Run new two dimensional plotting experiment
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5
+        with:
+          command: ci_run_lab
+          startup-options: -softwareopengl
+          generate-summary: false
+
       - name: Verify captured files and report counts
         if: ${{ always() }}
         run: python3 ci/verify_outputs.py
@@ -77,6 +85,7 @@ jobs:
             output/
             ci-diagnostics/
             matlab-startup.log
+            lab-output/
           if-no-files-found: error
           retention-days: 14
           compression-level: 6
