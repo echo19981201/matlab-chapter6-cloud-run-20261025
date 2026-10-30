@@ -1,0 +1,69 @@
+name: MATLAB three simulation questions
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: matlab-three-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  run-three:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install virtual display and Chinese fonts from Ubuntu
+        timeout-minutes: 5
+        run: |
+          mkdir -p ci-diagnostics output
+          sudo apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=2 update
+          sudo apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=2 install -y --no-install-recommends xvfb x11-utils fontconfig fonts-noto-cjk libgl1-mesa-dri libgl1-mesa-glx
+          fc-cache -f
+          fc-match 'Noto Sans CJK SC' | tee ci-diagnostics/cjk-font.txt
+          fc-list :lang=zh family | sort -u > ci-diagnostics/chinese-fonts.txt
+
+      - name: Start Xvfb and verify display readiness
+        run: |
+          nohup Xvfb :99 -screen 0 1600x1200x24 -nolisten tcp +extension GLX +render -noreset > ci-diagnostics/xvfb.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if xdpyinfo -display :99 > ci-diagnostics/display.txt 2>&1; then
+              echo 'DISPLAY=:99' >> "$GITHUB_ENV"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat ci-diagnostics/xvfb.log
+          exit 1
+
+      - name: Set up actual MATLAB R2024b
+        uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
+        with:
+          release: R2024b
+          install-system-dependencies: true
+          cache: false
+
+      - name: Run three questions in actual MATLAB
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5
+        with:
+          command: ci_run_three_questions
+          startup-options: -softwareopengl -logfile matlab-three-startup.log
+          generate-summary: false
+      - name: Preserve real captures and evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: MATLAB-Three-R2024b-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            three-output/
+            ci-diagnostics/
+            matlab-three-startup.log
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
