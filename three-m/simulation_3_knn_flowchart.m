@@ -15,7 +15,9 @@ for i = 1:numel(nodes)
     rectangle('Position',[1 ys(i) 8 1], 'Curvature',curve, 'EdgeColor',[0.2 0.35 0.55], 'FaceColor',[0.95 0.98 1], 'LineWidth',1.5);
     text(5,ys(i)+0.5,nodes{i},'HorizontalAlignment','center','VerticalAlignment','middle','FontSize',13);
     if i < numel(nodes)
-        quiver(5,ys(i),0,-0.72,0,'Color',[0.1 0.2 0.3],'LineWidth',1.7,'MaxHeadSize',0.18);
+        tip = ys(i+1)+1;
+        plot([5 5],[ys(i) tip+0.2],'Color',[0.1 0.2 0.3],'LineWidth',1.7);
+        patch([4.88 5 5.12],[tip+0.2 tip tip+0.2],[0.1 0.2 0.3],'EdgeColor','none');
     end
 end
 hold off;
