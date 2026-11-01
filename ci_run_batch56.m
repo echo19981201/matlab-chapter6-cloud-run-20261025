@@ -10,15 +10,22 @@ feature('hotlinks',false);
 fontName='Noto Sans Mono CJK SC';
 assert(any(strcmp(listfonts,fontName)),'Chinese font unavailable');
 set(groot,'DefaultFigureVisible','on','DefaultFigureWindowStyle','normal','DefaultAxesFontName',fontName,'DefaultTextFontName',fontName);
-files=dir(fullfile(srcdir,'*.m')); assert(numel(files)==56,'Expected 56 scripts');
+files=dir(fullfile(srcdir,'*.m')); assert(numel(files)==58,'Expected 58 scripts');
 items=struct('name',{},'success',{},'images',{},'error',{});
 for k=1:numel(files)
     filename=files(k).name; [~,stem]=fileparts(filename);
-    fprintf('\n=== %d/56 %s ===\n',k,filename);
+    fprintf('\n=== %d/58 %s ===\n',k,filename);
     close all force; bdclose('all');
     imgs={}; err=''; ok=false;
     try
         output=runOne(fullfile(srcdir,filename));
+        if strcmp(stem,'demo02_sym_matrix')
+            evalin('base','assert(isa(B,''sym'') && isequal(size(B),[3 3]) && isequal(B,sym(1)./sym([1 2 3;2 3 4;3 4 5])));');
+            fprintf('PASS symbolic matrix conversion.\n');
+        elseif strcmp(stem,'demo03_ss_delays')
+            evalin('base','assert(M1.InputDelay==0.1 && M1.OutputDelay==0 && M2.InputDelay==0 && M2.OutputDelay==0.1);');
+            fprintf('PASS state-space input/output delays.\n');
+        end
         writeText(fullfile(out,'logs',[stem '.txt']),output);
         figs=findall(groot,'Type','figure');
         for f=1:numel(figs)
@@ -57,7 +64,7 @@ for k=1:numel(files)
 end
 manifest.complete=all([items.success]);
 writeText(fullfile(out,'manifest.json'),jsonencode(manifest));
-fprintf('\nFINAL: %d / 56 scripts passed.\n',sum([items.success]));
+fprintf('\nFINAL: %d / 58 scripts passed.\n',sum([items.success]));
 assert(manifest.complete,'One or more scripts failed. See individual logs.');
 end
 function output=runOne(path)
@@ -82,6 +89,11 @@ cuts=1:perPage:numel(lines);
 if strcmp(prefix,'ex08_4_01')
     boundary=find(strcmp(lines,'输入矩阵 B'),1);
     assert(~isempty(boundary),'Expected model output boundary missing');
+    cuts=[1 boundary];
+end
+if strcmp(prefix,'demo03_ss_delays')
+    boundary=find(strcmp(strtrim(lines),'M2 ='),1);
+    assert(~isempty(boundary),'Expected second delayed state-space model missing');
     cuts=[1 boundary];
 end
 cuts(end+1)=numel(lines)+1;

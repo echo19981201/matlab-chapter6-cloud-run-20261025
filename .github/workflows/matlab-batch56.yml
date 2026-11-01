@@ -1,4 +1,4 @@
-name: MATLAB batch56 system lab
+name: MATLAB batch58 examples
 on:
   workflow_dispatch:
 permissions:
@@ -50,7 +50,7 @@ jobs:
           install-system-dependencies: true
           cache: false
 
-      - name: Run batch56 models in actual MATLAB
+      - name: Run batch58 models in actual MATLAB
         uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5
         with:
           command: ci_run_batch56
@@ -60,7 +60,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: MATLAB-Batch56-R2024b-${{ github.run_id }}-${{ github.run_attempt }}
+          name: MATLAB-Batch58-R2024b-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             batch-output/
             ci-diagnostics/
