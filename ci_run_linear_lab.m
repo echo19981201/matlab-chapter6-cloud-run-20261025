@@ -84,9 +84,16 @@ content=regexprep(content,'<a href="matlab:[^\n]*</a>','');
 content=regexprep(content,'\n\s*\n','\n');
 lines=regexp(strtrim(content),'\n','split');
 perPage=32;
-nPages=ceil(numel(lines)/perPage);perPage=ceil(numel(lines)/nPages);names={};
+cuts=1;
+while numel(lines)-cuts(end)+1>perPage
+    last=cuts(end)+perPage-1;
+    candidates=find(~cellfun('isempty',regexp(lines(cuts(end)+8:last),'^[A-Za-z][A-Za-z0-9_]* =','once')));
+    if isempty(candidates),cuts(end+1)=last+1;else,cuts(end+1)=cuts(end)+7+candidates(end);end
+end
+cuts(end+1)=numel(lines)+1;
+nPages=numel(cuts)-1;names={};
 for pg=1:nPages
-    pageLines=lines((pg-1)*perPage+1:min(pg*perPage,numel(lines)));
+    pageLines=lines(cuts(pg):cuts(pg+1)-1);
     h=max(360,min(1160,160+numel(pageLines)*30));
     fig=figure('Color','w','Position',[20 20 1100 h],'MenuBar','none','ToolBar','none','NumberTitle','off','Name',heading);
     ax=axes('Parent',fig,'Position',[0 0 1 1],'Visible','off','XLim',[0 1100],'YLim',[0 h]);
