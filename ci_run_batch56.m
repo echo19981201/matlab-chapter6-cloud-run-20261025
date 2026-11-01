@@ -61,7 +61,9 @@ fprintf('\nFINAL: %d / 56 scripts passed.\n',sum([items.success]));
 assert(manifest.complete,'One or more scripts failed. See individual logs.');
 end
 function output=runOne(path)
-output=evalc('run(path)');
+evalin('base','clearvars');
+cmd=sprintf('run(''%s'')',strrep(path,'''',''''''));
+output=evalc('evalin(''base'',cmd);');
 end
 function names=captureText(content,heading,prefix,out,fontName)
 content=strrep(content,char(13),'');
