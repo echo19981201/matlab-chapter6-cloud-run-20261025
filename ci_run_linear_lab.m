@@ -80,10 +80,11 @@ assert(abs(zd+.2)<1e-10 && max(abs(sort(pd)-[.2;.5]))<1e-10 && abs(kd-1)<1e-10);
 end
 function names=captureText(content,heading,prefix,out,fontName)
 content=strrep(content,char(13),'');
+content=regexprep(content,'<a href="matlab:[^\n]*</a>','');
 content=regexprep(content,'\n\s*\n','\n');
 lines=regexp(strtrim(content),'\n','split');
 perPage=32;
-nPages=ceil(numel(lines)/perPage);names={};
+nPages=ceil(numel(lines)/perPage);perPage=ceil(numel(lines)/nPages);names={};
 for pg=1:nPages
     pageLines=lines((pg-1)*perPage+1:min(pg*perPage,numel(lines)));
     h=max(360,min(1160,160+numel(pageLines)*30));
