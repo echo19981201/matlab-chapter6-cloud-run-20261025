@@ -78,8 +78,15 @@ for k=1:numel(lines)
     wrapped{end+1}=line;
 end
 lines=wrapped; perPage=32; names={};
-for pg=1:ceil(numel(lines)/perPage)
-    pageLines=lines((pg-1)*perPage+1:min(pg*perPage,numel(lines)));
+cuts=1:perPage:numel(lines);
+if strcmp(prefix,'ex08_4_01')
+    boundary=find(strcmp(lines,'输入矩阵 B'),1);
+    assert(~isempty(boundary),'Expected model output boundary missing');
+    cuts=[1 boundary];
+end
+cuts(end+1)=numel(lines)+1;
+for pg=1:numel(cuts)-1
+    pageLines=lines(cuts(pg):cuts(pg+1)-1);
     h=max(360,160+numel(pageLines)*29);
     fig=figure('Color','w','Position',[20 20 1450 h],'MenuBar','none','ToolBar','none','NumberTitle','off','Name',heading);
     ax=axes('Parent',fig,'Position',[0 0 1 1],'Visible','off','XLim',[0 1450],'YLim',[0 h]);
