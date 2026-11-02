@@ -91,6 +91,17 @@ for k = 1:2
     add_log(name, ac, 'iabc', [480 405 595 445]);
     add_log(name, dcCurrent, 'idc', [1030 365 1145 405]);
     add_log(name, dcVoltage, 'vdc', [1030 465 1145 505]);
+    % Keep electrical topology unchanged; show readable diagram labels.
+    labels = {src,'三相电源'; ac,'三相电流测量'; bridge,'三相六二极管整流桥'; ...
+        dcCurrent,'直流电流测量'; load,'串联负载'; dcVoltage,'直流电压测量'};
+    for q=1:size(labels,1)
+        set_param(labels{q,1},'ShowName','on','FontName','Noto Sans CJK SC','FontSize','11');
+        set_param(labels{q,1},'Name',labels{q,2});
+    end
+    if k==1, loadLabel=sprintf('R 负载：%g Ω',p.resistance); else, loadLabel=sprintf('R-L 负载：%g Ω + %g mH',p.resistance,1000*p.inductance); end
+    note=Simulink.Annotation(name,sprintf('三相桥式不控整流 — %s\n线电压 %g V（有效值），%g Hz；三桥臂，每臂两只二极管',loadLabel,p.lineVoltageRms,p.frequency));
+    note.Position=[310 35]; note.FontName='Noto Sans CJK SC'; note.FontSize=13;
+    set_param(name,'ZoomFactor','FitSystem');
     save_system(name, fullfile(modelDir, [name '.slx']));
     fprintf('已构建并保存模型：%s\n', fullfile(modelDir, [name '.slx']));
 end
